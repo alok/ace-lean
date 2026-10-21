@@ -1,0 +1,24 @@
+name: Lean and diagnostics
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+          use-mathlib-cache: false
+          build: false
+      - name: Fetch required official mathlib cache
+        run: lake exe cache get Mathlib.Data.Nat.Prime.Infinite Mathlib.Basic.Real.Basic Mathlib.Data.Set.Basic
+      - name: Build implementation, examples and semantics tests
+        run: lake build
+      - name: Check diagnostics and source positions
+        run: python3 scripts/check_diagnostics.py
+      - name: Audit theorem dependencies
+        run: lake env lean examples/Audit.lean
